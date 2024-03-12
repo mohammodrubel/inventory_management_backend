@@ -7,6 +7,10 @@ const productModelSchema = new Schema<T_product>({
         required:true,
         unique:true,
     },
+    productPhoto:{
+        type:String,
+        required:true,
+    },
     brand:{
         type:String,
         required:true,

@@ -1,5 +1,6 @@
 
 export type T_product = {
+    productPhoto:string;
     name:string;
     category:string;
     price:number;

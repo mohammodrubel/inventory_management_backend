@@ -7,7 +7,6 @@ const addNewProductService = async (payload: T_product) => {
 }
 
 const getAllProductService = async (query: Record<string, unknown>) => {
-  console.log(query)
   const queryObject = { ...query }
   const searchableField = [ 'name']
   let sort = 'price'
