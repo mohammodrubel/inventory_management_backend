@@ -7,7 +7,7 @@ import moment from 'moment'
 
 const addNewSalesService = async (payload: T_Sales) => {
   const existingProduct = await Product.findById(payload.product);
-  
+
   if (!existingProduct) {
     throw new AppError(httpStatus.BAD_REQUEST, 'This product is not found');
   }
@@ -27,80 +27,92 @@ const addNewSalesService = async (payload: T_Sales) => {
   return result;
 };
 
-const getAllSalesService = async (payload:any) => {
-    const startDateFormatted = moment(payload.startDate, 'M/D/YYYY').format('YYYY-MM-DD');
-    const endDateFormatted = moment(payload.endDate, 'M/D/YYYY').format('YYYY-MM-DD');
+const getAllSalesService = async (payload: any) => {
 
-    const result = await Sales.aggregate([
+  const convertDate = (date) => {
+    const [day, month, year] = date.split('/')
+    return `${year}-${month}-${day}`
+  }
+  const startDate = convertDate(payload.startDate)
+  const endDate = convertDate(payload.endDate)
+
+  const result = await Sales.aggregate(
+    [
       {
         $match: {
           date: {
-            $gte: startDateFormatted,
-            $lte: endDateFormatted
+            $gte: startDate,
+            $lte: endDate
           }
         }
       },
       {
         $lookup: {
-          from: 'products', 
-          localField: 'product', 
-          foreignField: '_id', 
+          from: 'products',
+          localField: 'product',
+          foreignField: '_id',
           as: 'data'
         }
       },
       {
-        $unwind:'$data'
+        $unwind: '$data'
       }
-    ]);
-    return result;
-}
-
-const getAllQuantitySalesService = async (payload: any) => {
-  const startDateFormatted = moment(payload.startDate, 'M/D/YYYY').format('YYYY-MM-DD');
-  const endDateFormatted = moment(payload.endDate, 'M/D/YYYY').format('YYYY-MM-DD');
-
-  const result = await Sales.aggregate([
-      {
-          $match: {
-              date: {
-                  $gte: startDateFormatted,
-                  $lte: endDateFormatted
-              }
-          }
-      },
-      {
-          $lookup: {
-              from: 'products',
-              localField: 'product',
-              foreignField: '_id',
-              as: 'data'
-          }
-      },
-      {
-          $unwind: '$data'
-      },
-      {
-          $group: {
-              _id: '$data.name',
-              totalQuantity: { $sum: '$quantity' },
-              totalPrice:{$sum:'$data.price'}
-          }
-      },
-      {
-          $project: {
-              productName: '$_id',
-              totalPrice: 1,
-              totalQuantity: 1,
-              _id: 0
-          }
-      }
-  ]);
+    ]
+  )
+  console.log(result)
   return result;
 }
 
+const getAllQuantitySalesService = async (payload: any) => {
+  const convertDate = (date) => {
+    const [day, month, year] = date.split('/')
+    return `${year}-${month}-${day}`
+  }
+  const startDate = convertDate(payload.startDate)
+  const endDate = convertDate(payload.endDate)
 
+  const result = await Sales.aggregate(
+    [
+      {
+        $match: {
+          date: {
+            $gte: startDate,
+            $lte: endDate
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'product',
+          foreignField: '_id',
+          as: 'data'
+        }
+      },
+      {
+        $unwind: '$data'
+      },
+      {
+        $group: {
+          _id: '$data.name',
+          totalQuantity: { $sum: '$quantity' },
+          totalPrice: { $sum: '$data.price' }
+        }
+      },
+      {
+        $project: {
+          productName: '$_id',
+          totalPrice: 1,
+          totalQuantity: 1,
+          _id: 0
+        }
+      }
+    ]
+  )
 
+ return result
 
+}
 
 const updateSales = async (id: string, payload: Record<string, unknown>) => {
   const result = await Sales.findByIdAndUpdate(id, payload, { new: true })
